@@ -1,12 +1,13 @@
 import { shipTypes } from '../constants';
 import { v4 as uuidv4 } from 'uuid';
+import GameManager from '../utils/gameManager';
+import { HttpException } from '../exceptions/httpException';
 
 const startGame = async () => {
   const uuid = uuidv4();
-
   const grid = generateGrid();
-
-  console.table(grid);
+  const gameManager = GameManager.getInstance();
+  gameManager.addGame(uuid, grid);
 
   return uuid;
 };
@@ -56,8 +57,13 @@ const generateGrid = (): number[][] => {
           }
           // Place the ship if it fits
           if (fits) {
+            shipTypes[i].position = { startX: x, startY: y };
             for (let l = y; l < y + shipLength; l++) {
               grid[x][l] = shipTypes[i].id;
+
+              if (l === y + shipLength - 1) {
+                const shipPos = shipTypes[i].position;
+              }
 
               //Mark neigbouring cells as occupied
               if (x > 0 && l === y && l > 0) {
@@ -149,6 +155,28 @@ const generateGrid = (): number[][] => {
   return grid;
 };
 
+const checkShot = async (gameId: string, coordinates: { x: number; y: number }) => {
+  const gameManager = GameManager.getInstance();
+  const gameState = gameManager.getGame(gameId);
+
+  if (!gameState) throw new HttpException(404, "Game doesn't exist!");
+
+  const gameGrid = gameState.gameGrid;
+  let result;
+
+  if (gameGrid[coordinates.x][coordinates.y] !== 0 && gameGrid[coordinates.x][coordinates.y] < 10)
+    result = 'Hit';
+  else {
+    gameState.playerHits--;
+    result = 'Miss';
+  }
+
+  gameManager.updateGameState(gameId, gameState);
+
+  return result;
+};
+
 export const gameService = {
   startGame,
+  checkShot,
 };

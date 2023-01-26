@@ -10,4 +10,13 @@ const startGame = async (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-export const gameController = { startGame };
+const checkShot = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await gameService.checkShot(req.params.gameId, req.body);
+    res.status(200).send({ result });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const gameController = { startGame, checkShot };
