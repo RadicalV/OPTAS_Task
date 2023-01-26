@@ -1,6 +1,19 @@
 import { shipTypes } from '../constants';
+import { v4 as uuidv4 } from 'uuid';
 
 const startGame = async () => {
+  const uuid = uuidv4();
+
+  const grid = generateGrid();
+
+  console.table(grid);
+
+  return uuid;
+};
+
+const generateGrid = (): number[][] => {
+  const maxIterationCount = 200;
+
   // Initializing empty grid
   const grid: number[][] = [];
 
@@ -12,11 +25,12 @@ const startGame = async () => {
   }
 
   // Place ships on the grid
-  for (let i = 0; i < shipTypes.length; i++) {
+  let iterationCount = 0;
+  outerloop: for (let i = 0; i < shipTypes.length; i++) {
     for (let j = 0; j < shipTypes[i].count; j++) {
       let placed = false;
 
-      while (!placed) {
+      while (!placed && maxIterationCount > iterationCount) {
         // Generate starting random starting position
         const x = Math.floor(Math.random() * 10);
         const y = Math.floor(Math.random() * 10);
@@ -54,6 +68,7 @@ const startGame = async () => {
               if (x < 9 && l === y && l > 0) {
                 grid[x + 1][l - 1] = shipTypes[i].id * 10;
                 grid[x + 1][l] = shipTypes[i].id * 10;
+                grid[x][l - 1] = shipTypes[i].id * 10;
               }
               if (x > 0) {
                 grid[x - 1][l] = shipTypes[i].id * 10;
@@ -69,6 +84,7 @@ const startGame = async () => {
               if (x < 9 && l === y + shipLength - 1 && l < 9) {
                 grid[x + 1][l] = shipTypes[i].id * 10;
                 grid[x + 1][l + 1] = shipTypes[i].id * 10;
+                grid[x][l + 1] = shipTypes[i].id * 10;
               }
             }
             placed = true;
@@ -114,15 +130,23 @@ const startGame = async () => {
               if (y < 9 && l === x + shipLength - 1 && l < 9) {
                 grid[l + 1][y + 1] = shipTypes[i].id * 10;
                 grid[l][y + 1] = shipTypes[i].id * 10;
+                grid[l + 1][y] = shipTypes[i].id * 10;
               }
             }
             placed = true;
           }
         }
+        iterationCount++;
+        if (iterationCount >= maxIterationCount) {
+          break outerloop;
+        }
       }
     }
   }
-  return '123456123';
+  if (iterationCount >= maxIterationCount) {
+    return generateGrid();
+  }
+  return grid;
 };
 
 export const gameService = {
