@@ -1,4 +1,4 @@
-import { GameState } from '../interfaces';
+import { GameState, Ship } from '../interfaces';
 
 class GameManager {
   private static _instance: GameManager;
@@ -18,8 +18,14 @@ class GameManager {
     return this._instance;
   }
 
-  addGame(gameId: string, grid: number[][]) {
-    const gameState: GameState = { gameGrid: grid, playerHits: 25 };
+  addGame(gameId: string, grid: number[][], ships: Ship[], totalHitPoints: number) {
+    const gameState: GameState = {
+      gameGrid: grid,
+      ships: ships,
+      playerHitsLeft: 25,
+      playerHits: 0,
+      totalHitPoints: totalHitPoints,
+    };
     this.gamesMap.set(gameId, gameState);
   }
 

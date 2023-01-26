@@ -2,17 +2,31 @@ import { shipTypes } from '../constants';
 import { v4 as uuidv4 } from 'uuid';
 import GameManager from '../utils/gameManager';
 import { HttpException } from '../exceptions/httpException';
+import { Ship } from '../interfaces';
 
 const startGame = async () => {
   const uuid = uuidv4();
-  const grid = generateGrid();
-  const gameManager = GameManager.getInstance();
-  gameManager.addGame(uuid, grid);
+  const ships: Ship[] = [];
 
+  const grid = generateGrid(ships);
+  const gameManager = GameManager.getInstance();
+
+  let totalHitPoints = 0;
+
+  shipTypes.forEach((ship) => {
+    totalHitPoints += ship.count * ship.size;
+  });
+
+  gameManager.addGame(uuid, grid, ships, totalHitPoints);
+
+  console.log(ships);
+  console.log(ships[0].cells);
+
+  console.table(grid);
   return uuid;
 };
 
-const generateGrid = (): number[][] => {
+const generateGrid = (ships: Ship[]): number[][] => {
   const maxIterationCount = 200;
 
   // Initializing empty grid
@@ -57,13 +71,12 @@ const generateGrid = (): number[][] => {
           }
           // Place the ship if it fits
           if (fits) {
-            shipTypes[i].position = { startX: x, startY: y };
+            const ship: Ship = { cells: [] };
+
             for (let l = y; l < y + shipLength; l++) {
               grid[x][l] = shipTypes[i].id;
 
-              if (l === y + shipLength - 1) {
-                const shipPos = shipTypes[i].position;
-              }
+              ship.cells.push({ x: x, y: l });
 
               //Mark neigbouring cells as occupied
               if (x > 0 && l === y && l > 0) {
@@ -93,6 +106,7 @@ const generateGrid = (): number[][] => {
                 grid[x][l + 1] = shipTypes[i].id * 10;
               }
             }
+            ships.push(ship);
             placed = true;
           }
         } else {
@@ -109,8 +123,12 @@ const generateGrid = (): number[][] => {
           }
           // Place the ship if it fits
           if (fits) {
+            const ship: Ship = { cells: [] };
+
             for (let l = x; l < x + shipLength; l++) {
               grid[l][y] = shipTypes[i].id;
+
+              ship.cells.push({ x: l, y: y });
 
               //Mark neigbouring cells as occupied
               if (y > 0 && l === x && l > 0) {
@@ -139,6 +157,7 @@ const generateGrid = (): number[][] => {
                 grid[l + 1][y] = shipTypes[i].id * 10;
               }
             }
+            ships.push(ship);
             placed = true;
           }
         }
@@ -150,8 +169,10 @@ const generateGrid = (): number[][] => {
     }
   }
   if (iterationCount >= maxIterationCount) {
-    return generateGrid();
+    ships.splice(0);
+    return generateGrid(ships);
   }
+
   return grid;
 };
 
@@ -164,11 +185,40 @@ const checkShot = async (gameId: string, coordinates: { x: number; y: number }) 
   const gameGrid = gameState.gameGrid;
   let result;
 
-  if (gameGrid[coordinates.x][coordinates.y] !== 0 && gameGrid[coordinates.x][coordinates.y] < 10)
-    result = 'Hit';
-  else {
-    gameState.playerHits--;
-    result = 'Miss';
+  if (gameGrid[coordinates.x][coordinates.y] !== 0 && gameGrid[coordinates.x][coordinates.y] < 10) {
+    gameState.playerHits += 1;
+
+    if (gameState.playerHits === gameState.totalHitPoints) {
+      result = { message: 'Win', destroyed: false };
+    } else {
+      result = { message: 'Hit', destroyed: false };
+
+      let index = undefined;
+      gameState.ships.forEach((ship, id) => {
+        for (let i = 0; i < ship.cells.length; i++) {
+          if (ship.cells[i].x === coordinates.x && ship.cells[i].y === coordinates.y) {
+            ship.cells.splice(i, 1);
+
+            if (ship.cells.length === 0) {
+              result = { message: 'Hit', destroyed: true };
+              index = id;
+            }
+            break;
+          }
+        }
+      });
+
+      if (index !== undefined) {
+        gameState.ships.splice(index, 1);
+      }
+
+      console.log(gameState.ships);
+    }
+  } else {
+    gameState.playerHitsLeft--;
+
+    if (gameState.playerHitsLeft !== 0) result = { message: 'Miss', destroyed: false };
+    else result = { message: 'Lose', destroyed: false };
   }
 
   gameManager.updateGameState(gameId, gameState);
