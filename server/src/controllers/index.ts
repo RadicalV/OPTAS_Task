@@ -13,10 +13,19 @@ const startGame = async (req: Request, res: Response, next: NextFunction) => {
 const checkShot = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = await gameService.checkShot(req.params.gameId, req.body);
-    res.status(200).send({ result });
+    res.status(200).send(result);
   } catch (error) {
     next(error);
   }
 };
 
-export const gameController = { startGame, checkShot };
+const checkGameOver = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await gameService.checkGameOver(req.params.gameId);
+    res.status(200).send(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const gameController = { startGame, checkShot, checkGameOver };

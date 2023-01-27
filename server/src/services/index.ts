@@ -19,9 +19,6 @@ const startGame = async () => {
 
   gameManager.addGame(uuid, grid, ships, totalHitPoints);
 
-  console.log(ships);
-  console.log(ships[0].cells);
-
   console.table(grid);
   return uuid;
 };
@@ -188,38 +185,49 @@ const checkShot = async (gameId: string, coordinates: { x: number; y: number }) 
   if (gameGrid[coordinates.x][coordinates.y] !== 0 && gameGrid[coordinates.x][coordinates.y] < 10) {
     gameState.playerHits += 1;
 
-    if (gameState.playerHits === gameState.totalHitPoints) {
-      result = { message: 'Win', destroyed: false };
-    } else {
-      result = { message: 'Hit', destroyed: false };
+    result = { message: 'Hit', destroyed: false };
 
-      let index = undefined;
-      gameState.ships.forEach((ship, id) => {
-        for (let i = 0; i < ship.cells.length; i++) {
-          if (ship.cells[i].x === coordinates.x && ship.cells[i].y === coordinates.y) {
-            ship.cells.splice(i, 1);
+    let index = undefined;
+    gameState.ships.forEach((ship, id) => {
+      for (let i = 0; i < ship.cells.length; i++) {
+        if (ship.cells[i].x === coordinates.x && ship.cells[i].y === coordinates.y) {
+          ship.cells.splice(i, 1);
 
-            if (ship.cells.length === 0) {
-              result = { message: 'Hit', destroyed: true };
-              index = id;
-            }
-            break;
+          if (ship.cells.length === 0) {
+            result = { message: 'Hit', destroyed: true };
+            index = id;
           }
+          break;
         }
-      });
-
-      if (index !== undefined) {
-        gameState.ships.splice(index, 1);
       }
+    });
 
-      console.log(gameState.ships);
+    if (index !== undefined) {
+      gameState.ships.splice(index, 1);
     }
   } else {
     gameState.playerHitsLeft--;
 
-    if (gameState.playerHitsLeft !== 0) result = { message: 'Miss', destroyed: false };
-    else result = { message: 'Lose', destroyed: false };
+    result = { message: 'Miss', destroyed: false };
   }
+
+  gameManager.updateGameState(gameId, gameState);
+
+  return result;
+};
+
+const checkGameOver = async (gameId: string) => {
+  const gameManager = GameManager.getInstance();
+  const gameState = gameManager.getGame(gameId);
+
+  if (!gameState) throw new HttpException(404, "Game doesn't exist!");
+
+  let result;
+
+  if (gameState.playerHits === gameState.totalHitPoints) {
+    result = { message: 'Win' };
+  }
+  if (gameState.playerHitsLeft === 0) result = { message: 'Lose' };
 
   gameManager.updateGameState(gameId, gameState);
 
@@ -229,4 +237,5 @@ const checkShot = async (gameId: string, coordinates: { x: number; y: number }) 
 export const gameService = {
   startGame,
   checkShot,
+  checkGameOver,
 };

@@ -1,3 +1,4 @@
+const ORIGIN = '*';
 const PORT = '3000';
 
 const shipTypes = [
@@ -28,4 +29,4 @@ const shipTypes = [
   },
 ];
 
-export { PORT, shipTypes };
+export { ORIGIN, PORT, shipTypes };
