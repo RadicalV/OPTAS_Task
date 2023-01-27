@@ -1,14 +1,13 @@
-import NiceModal from "@ebay/nice-modal-react";
 import CloseIcon from "@mui/icons-material/Close";
 import { Box } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import gameApi from "../api";
-import PlayAgainModal from "./PlayAgainModal";
 
 interface Props {
   x: number;
   y: number;
   gameId: string;
+  reset: boolean;
   setHits: () => void;
   setDestroyedShips: () => void;
   checkGameOver: () => void;
@@ -22,6 +21,10 @@ enum CellState {
 
 const Cell = (props: Props) => {
   const [cellState, setCellState] = useState(CellState.none);
+
+  useEffect(() => {
+    setCellState(CellState.none);
+  }, [props.reset]);
 
   return (
     <Box

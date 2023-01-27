@@ -9,6 +9,7 @@ const MainPage = () => {
   const [gameId, setGameId] = useState("");
   const [grid, setGrid] = useState<number[][]>([]);
   const [hits, setHits] = useState(25);
+  const [reset, setReset] = useState(false);
   const [destroyedShips, setDestroyedShips] = useState(0);
 
   const generateGrid = () => {
@@ -30,6 +31,7 @@ const MainPage = () => {
     generateGrid();
     setHits(25);
     setDestroyedShips(0);
+    setReset(!reset);
   };
 
   const checkGameOver = () => {
@@ -66,6 +68,8 @@ const MainPage = () => {
     });
   };
 
+  useEffect(() => {}, [gameId]);
+
   return (
     <Box>
       {gameId ? (
@@ -94,6 +98,7 @@ const MainPage = () => {
                       x={x}
                       y={y}
                       gameId={gameId}
+                      reset={reset}
                       setHits={() => {
                         setHits(hits - 1);
                       }}
