@@ -227,7 +227,7 @@ const checkGameOver = async (gameId: string) => {
   if (gameState.playerHits === gameState.totalHitPoints) {
     result = { message: 'Win' };
   }
-  if (gameState.playerHitsLeft === 0) result = { message: 'Lose' };
+  if (gameState.playerHitsLeft <= 0) result = { message: 'Lose' };
 
   gameManager.updateGameState(gameId, gameState);
 

@@ -1,6 +1,6 @@
 import NiceModal from "@ebay/nice-modal-react";
 import { Box, Button, Grid, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import gameApi from "../api";
 import Cell from "../components/Cell";
 import PlayAgainModal from "../components/PlayAgainModal";
@@ -9,7 +9,6 @@ const MainPage = () => {
   const [gameId, setGameId] = useState("");
   const [grid, setGrid] = useState<number[][]>([]);
   const [hits, setHits] = useState(25);
-  const [reset, setReset] = useState(false);
   const [destroyedShips, setDestroyedShips] = useState(0);
 
   const generateGrid = () => {
@@ -31,7 +30,6 @@ const MainPage = () => {
     generateGrid();
     setHits(25);
     setDestroyedShips(0);
-    setReset(!reset);
   };
 
   const checkGameOver = () => {
@@ -68,7 +66,39 @@ const MainPage = () => {
     });
   };
 
-  useEffect(() => {}, [gameId]);
+  const handleCellClick = useCallback(
+    (x: number, y: number) => {
+      if (grid[x][y] === 0) {
+        gameApi.shoot(gameId, { x, y }).then((value) => {
+          const response = value.data;
+
+          setGrid((prev) => {
+            return prev.map((row, i) => {
+              return row.map((cell, j) => {
+                if (i === x && j === y) {
+                  switch (response.message) {
+                    case "Miss": {
+                      setHits(hits - 1);
+                      return 1;
+                    }
+                    case "Hit": {
+                      if (response.destroyed) {
+                        setDestroyedShips(destroyedShips + 1);
+                      }
+                      return 2;
+                    }
+                  }
+                }
+                return cell;
+              });
+            });
+          });
+          checkGameOver();
+        });
+      }
+    },
+    [grid, gameId]
+  );
 
   return (
     <Box>
@@ -93,21 +123,13 @@ const MainPage = () => {
             {grid.map((row, x) => {
               return row.map((col, y) => {
                 return (
-                  <Grid item key={`y${y}x${x}`} md={1.2}>
-                    <Cell
-                      x={x}
-                      y={y}
-                      gameId={gameId}
-                      reset={reset}
-                      setHits={() => {
-                        setHits(hits - 1);
-                      }}
-                      setDestroyedShips={() => {
-                        setDestroyedShips(destroyedShips + 1);
-                      }}
-                      checkGameOver={checkGameOver}
-                    />
-                  </Grid>
+                  <Cell
+                    key={`y${y}x${x}`}
+                    state={grid[x][y]}
+                    onClick={() => {
+                      handleCellClick(x, y);
+                    }}
+                  />
                 );
               });
             })}
